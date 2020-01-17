@@ -9,6 +9,10 @@ type RegisterRequest struct {
 	Description string   `json:"description"`
 }
 
+// Validate the request structure
+// TODO:
+func (r *RegisterRequest) Validate() {}
+
 // RegisterResponse struct
 type RegisterResponse struct {
 	ID   string `json:"id"`

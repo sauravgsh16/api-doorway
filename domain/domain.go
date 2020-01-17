@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 var (
-	ErrInvalidServiceName     = errors.New("invalid service name")
-	ErrInvalidBaseURL         = errors.New("invalid base URL")
-	ErrInvalidEndpoint        = errors.New("invalid endpoint url")
-	ErrNoMatchBaseAndEndpoint = errors.New("no match - base URL and endpoint URL")
+	errInvalidServiceName     = errors.New("invalid service name")
+	errInvalidBaseURL         = errors.New("invalid base URL")
+	errInvalidEndpoint        = errors.New("invalid endpoint url")
+	errNoMatchBaseAndEndpoint = errors.New("no match - base URL and endpoint URL")
 )
 
 // MicroService struct
@@ -44,7 +44,7 @@ func NewMicroService(name, path, host, desc string, eps []string) *MicroService 
 // Validate the service struct
 func (ms *MicroService) Validate() error {
 	if len(strings.TrimSpace(ms.Name)) == 0 {
-		return ErrInvalidServiceName
+		return errInvalidServiceName
 	}
 	// TODO : Need to update validation
 

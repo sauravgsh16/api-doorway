@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrNoRegisteredServices = errors.New("no registered services")
+	errNoRegisteredServices = errors.New("no registered services")
 )
 
 type GateWayHandler interface{}
@@ -31,6 +31,8 @@ func (g *gateway) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Validate req structure
+
 	resp, err := g.proxy.AddService(&req)
 	if err != nil {
 		writeErrResponse(w, err.Error(), http.StatusInternalServerError)
@@ -43,10 +45,13 @@ func (g *gateway) Register(w http.ResponseWriter, r *http.Request) {
 func (g *gateway) GetProxyHandlers() (map[string]http.HandlerFunc, error) {
 	services := g.proxy.GetServices()
 	if len(services) == 0 {
-		return nil, ErrNoRegisteredServices
+		return nil, errNoRegisteredServices
 	}
 
 	proxyMap := make(map[string]http.HandlerFunc)
+
+	// TODO: Need to modify below map.
+	//
 
 	for _, srv := range services {
 		proxy, err := newProxy(srv)

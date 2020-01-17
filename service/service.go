@@ -30,6 +30,8 @@ func NewService(s store.MicroServiceStore) ProxyService {
 	}
 }
 
+// AddService is called when a new service requests it to be added.
+// Along with the db, we also add the service to the in-memory storage
 func (s *service) AddService(req *client.RegisterRequest) (*client.RegisterResponse, error) {
 	serv, err := s.store.AddService(req.Name, req.Path, req.Host, req.Description, req.Endpoints)
 	if err != nil {
@@ -43,6 +45,8 @@ func (s *service) AddService(req *client.RegisterRequest) (*client.RegisterRespo
 	return client.NewRegisterResponse(serv.ID, serv.Name), nil
 }
 
+// LoadService is called once when upon initial start-up of the application.
+// TODO: make sure to wrap call with sync.Once
 func (s *service) LoadServices() error {
 	services, err := s.store.GetServices()
 	if err != nil {
