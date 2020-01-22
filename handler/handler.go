@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/sauravgsh16/api-doorway/client"
+	"github.com/sauravgsh16/api-doorway/domain"
 	"github.com/sauravgsh16/api-doorway/service"
 )
 
@@ -16,11 +18,30 @@ var (
 type GateWayHandler interface{}
 
 type gateway struct {
-	proxy service.ProxyService
+	proxy  service.ProxyService
+	pm     map[string]http.HandlerFunc
+	notify <-chan *domain.MicroService
+	done   chan interface{}
+	mu     sync.Mutex
 }
 
-func NewGateWayHandler(s service.ProxyService) GateWayHandler {
-	return &gateway{proxy: s}
+// New returns a new gateway handler for a given service
+func New(s service.ProxyService) (GateWayHandler, error) {
+	g := &gateway{
+		proxy: s,
+		pm:    make(map[string]http.HandlerFunc, 0),
+		done:  make(chan interface{}),
+	}
+
+	var err error
+	g.notify, err = g.proxy.GetNotificationChan()
+	if err != nil {
+		return nil, err
+	}
+
+	g.listenNewService()
+
+	return g, nil
 }
 
 func (g *gateway) Register(w http.ResponseWriter, r *http.Request) {
@@ -33,6 +54,10 @@ func (g *gateway) Register(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Validate req structure
 
+	if err := req.Validate(); err != nil {
+		writeErrResponse(w, err.Error(), http.StatusBadRequest)
+	}
+
 	resp, err := g.proxy.AddService(&req)
 	if err != nil {
 		writeErrResponse(w, err.Error(), http.StatusInternalServerError)
@@ -42,26 +67,53 @@ func (g *gateway) Register(w http.ResponseWriter, r *http.Request) {
 	writeValidResponse(w, resp, http.StatusCreated)
 }
 
-func (g *gateway) GetProxyHandlers() (map[string]http.HandlerFunc, error) {
+func (g *gateway) addProxy(s *domain.MicroService) error {
+	p, err := newProxy(s)
+	if err != nil {
+		return err
+	}
+
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	// TODO: Find proper Key for storing in map
+	if _, ok := g.pm[p.service.Host]; ok {
+		return nil
+	}
+
+	g.pm[p.service.Host] = p.HandlerFunc
+	return nil
+}
+
+func (g *gateway) loadProxies(srvs map[string]*domain.MicroService) error {
+	for _, s := range srvs {
+		if err := g.addProxy(s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *gateway) GetProxyHandlers() error {
 	services := g.proxy.GetServices()
 	if len(services) == 0 {
-		return nil, errNoRegisteredServices
+		return errNoRegisteredServices
 	}
 
-	proxyMap := make(map[string]http.HandlerFunc)
+	return g.loadProxies(services)
+}
 
-	// TODO: Need to modify below map.
-	//
-
-	for _, srv := range services {
-		proxy, err := newProxy(srv)
-		if err != nil {
-			return nil, err
+func (g *gateway) listenNewService() {
+	go func() {
+		for {
+			select {
+			case s := <-g.notify:
+				go g.addProxy(s)
+			case <-g.done:
+				break
+			}
 		}
-		proxyMap[proxy.service.Path] = proxy.HandlerFunc
-	}
-
-	return proxyMap, nil
+	}()
 }
 
 /*

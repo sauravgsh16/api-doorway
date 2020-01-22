@@ -19,7 +19,6 @@ var (
 type MicroService struct {
 	ID          string   `json:"id" gorm:"primay_key"`
 	Name        string   `json:"name" sql:"varchar(50);index;unique;not null"`
-	Path        string   `json:"base_url" sql:"varchar(150);unique;not null"`
 	Endpoints   []string `json:"end_points" sql:"varchar(250);not null"`
 	Host        string   `json:"host" sql:"type:varchar(250);unique;not null"`
 	Description string   `json:"description" sql:"type:varchar(250)"`
@@ -30,12 +29,11 @@ type MicroService struct {
 }
 
 // NewMicroService returns a pointer to a new microservice
-func NewMicroService(name, path, host, desc string, eps []string) *MicroService {
+func NewMicroService(name, host, desc string, eps []string) *MicroService {
 	return &MicroService{
 		ID:          fmt.Sprintf("%s", uuid.Must(uuid.NewV4())),
 		Host:        host,
 		Name:        name,
-		Path:        path,
 		Description: desc,
 		Endpoints:   eps,
 	}

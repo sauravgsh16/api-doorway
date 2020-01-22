@@ -8,15 +8,15 @@ import (
 )
 
 var (
-	ErrServiceNotFound     = errors.New("service not found")
-	ErrServiceAlreadyExist = errors.New("service already exists")
-	ErrFailedToGetServices = errors.New("failed to get services from db")
+	errServiceNotFound     = errors.New("service not found")
+	errServiceAlreadyExist = errors.New("service already exists")
+	errFailedToGetServices = errors.New("failed to get services from db")
 )
 
 // MicroServiceStore interface
 type MicroServiceStore interface {
 	FindServiceByName(string) (*domain.MicroService, error)
-	AddService(name, bURL, host, desc string, eps []string) (*domain.MicroService, error)
+	AddService(name, host, desc string, eps []string) (*domain.MicroService, error)
 	GetServices() ([]domain.MicroService, error)
 }
 
@@ -34,19 +34,19 @@ func (mss *microserviceStore) FindServiceByName(name string) (*domain.MicroServi
 
 	notFound := mss.db.Where("name = ?", name).First(&ms).RecordNotFound()
 	if notFound {
-		return nil, ErrServiceNotFound
+		return nil, errServiceNotFound
 	}
 
 	return &ms, nil
 }
 
-func (mss *microserviceStore) AddService(name, bURL, host, desc string, eps []string) (*domain.MicroService, error) {
+func (mss *microserviceStore) AddService(name, host, desc string, eps []string) (*domain.MicroService, error) {
 	_, err := mss.FindServiceByName(name)
 	if err != nil {
-		return nil, ErrServiceAlreadyExist
+		return nil, errServiceAlreadyExist
 	}
 
-	ms := domain.NewMicroService(name, bURL, host, desc, eps)
+	ms := domain.NewMicroService(name, host, desc, eps)
 	if err := ms.Validate(); err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (mss *microserviceStore) GetServices() ([]domain.MicroService, error) {
 	var services []domain.MicroService
 
 	if err := mss.db.Find(&services).Error; err != nil {
-		return nil, ErrFailedToGetServices
+		return nil, errFailedToGetServices
 	}
 	return services, nil
 }
