@@ -2,44 +2,76 @@ package client
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
-
-	"github.com/gofrs/uuid"
+	"strings"
 )
 
 var (
-	errInvalidHost    = errors.New("host name invalid - empty")
-	errEmptyEndpoints = errors.New("need endpoints for to register service")
+	errInvalidServiceName = errors.New("invalid service name")
+	errInvalidBaseURL     = errors.New("invalid base url")
+	errInvalidMethod      = errors.New("invalid HTTP method")
+	errInvalidEndpoints   = errors.New("invalid end points")
 )
+
+// Endpoint struct
+type Endpoint struct {
+	Method string `json:"method"`
+	Path   string `json:"path"`
+}
 
 // RegisterRequest struct
 type RegisterRequest struct {
-	Name        string   `json:"name"`
-	Host        string   `json:"host"`
-	Endpoints   []string `json:"end_points"`
-	Description string   `json:"description"`
+	Name        string     `json:"name"`
+	Host        string     `json:"host"`
+	Endpoints   []Endpoint `json:"end_points"`
+	Description string     `json:"description"`
 }
 
 // Validate the request structure
-func (r *RegisterRequest) Validate() error {
-	if r.Name == "" {
-		r.Name = fmt.Sprintf("%s", uuid.Must(uuid.NewV4()))
+func (req *RegisterRequest) Validate() error {
+	if checkEmpty(req.Name) {
+		return errInvalidServiceName
 	}
 
-	if r.Host == "" {
-		return errInvalidHost
+	if checkEmpty(req.Host) {
+		return errInvalidBaseURL
 	}
 
-	if _, err := url.Parse(r.Host); err != nil {
-		return fmt.Errorf("host url invalid, %s", err.Error())
+	if checkEmpty(req.Endpoints) {
+		return errInvalidEndpoints
 	}
 
-	if len(r.Endpoints) == 0 {
-		return errEmptyEndpoints
+	_, err := url.ParseRequestURI(req.Host)
+	if err != nil {
+		return errInvalidBaseURL
+	}
+
+	for _, ep := range req.Endpoints {
+		if len(strings.TrimSpace(ep.Path)) == 0 {
+			ep.Method = "/"
+		}
+		if len(strings.TrimSpace(ep.Method)) == 0 {
+			return errInvalidMethod
+		}
 	}
 
 	return nil
+}
+
+func checkEmpty(v interface{}) bool {
+	switch t := v.(type) {
+	case string:
+		if len(strings.TrimSpace(t)) == 0 {
+			return true
+		}
+	case []Endpoint:
+		if len(t) == 0 {
+			return true
+		}
+	default:
+		return true
+	}
+	return false
 }
 
 // RegisterResponse struct

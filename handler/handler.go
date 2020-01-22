@@ -52,10 +52,9 @@ func (g *gateway) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Validate req structure
-
 	if err := req.Validate(); err != nil {
 		writeErrResponse(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	resp, err := g.proxy.AddService(&req)

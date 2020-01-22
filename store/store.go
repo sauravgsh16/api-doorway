@@ -16,7 +16,7 @@ var (
 // MicroServiceStore interface
 type MicroServiceStore interface {
 	FindServiceByName(string) (*domain.MicroService, error)
-	AddService(name, host, desc string, eps []string) (*domain.MicroService, error)
+	AddService(name, host, desc string, eps []*domain.EndPoint) (*domain.MicroService, error)
 	GetServices() ([]domain.MicroService, error)
 }
 
@@ -40,7 +40,7 @@ func (mss *microserviceStore) FindServiceByName(name string) (*domain.MicroServi
 	return &ms, nil
 }
 
-func (mss *microserviceStore) AddService(name, host, desc string, eps []string) (*domain.MicroService, error) {
+func (mss *microserviceStore) AddService(name, host, desc string, eps []*domain.EndPoint) (*domain.MicroService, error) {
 	_, err := mss.FindServiceByName(name)
 	if err != nil {
 		return nil, errServiceAlreadyExist
