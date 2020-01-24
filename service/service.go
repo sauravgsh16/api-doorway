@@ -47,7 +47,7 @@ func (s *service) AddService(req *client.RegisterRequest) (*client.RegisterRespo
 		eps = append(eps, &dEp)
 	}
 
-	serv, err := s.store.AddService(req.Name, req.Host, req.Description, eps)
+	serv, err := s.store.AddService(req.Name, req.Host, req.Description, req.Path, eps)
 	if err != nil {
 		return nil, err
 	}

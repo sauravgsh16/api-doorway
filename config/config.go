@@ -8,4 +8,6 @@ const (
 	DBName = "gateway"
 	DBType = "postgres"
 	COST   = 5
+
+	Addr = "localhost:5000"
 )

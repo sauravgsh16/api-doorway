@@ -1,18 +1,22 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"net/http/httputil"
 	"net/url"
+	"strings"
 )
 
 func main() {
-	host := "http://localhost:9000/test"
+	host := "http://localhost:9000/auth/foo/bar"
 
 	url, err := url.Parse(host)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 
-	httputil.NewSingleHostReverseProxy(url)
+	fmt.Printf("%s\n", url.Host)
+	fmt.Printf("%v\n", strings.Join(strings.Split(url.Path, "/")[2:], "/"))
+
+	// httputil.NewSingleHostReverseProxy(url)
 }

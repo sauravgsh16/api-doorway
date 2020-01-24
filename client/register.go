@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	errInvalidServiceName = errors.New("invalid service name")
-	errInvalidBaseURL     = errors.New("invalid base url")
-	errInvalidMethod      = errors.New("invalid HTTP method")
-	errInvalidEndpoints   = errors.New("invalid end points")
+	errInvalidServiceName    = errors.New("invalid service name")
+	errInvalidBaseURL        = errors.New("invalid base url")
+	errInvalidMethod         = errors.New("invalid HTTP method")
+	errInvalidEndpoints      = errors.New("invalid end points")
+	errInvalidPathIdentifier = errors.New("invalid path identifier, cannot be nil")
 )
 
 // Endpoint struct
@@ -23,6 +24,7 @@ type Endpoint struct {
 type RegisterRequest struct {
 	Name        string     `json:"name"`
 	Host        string     `json:"host"`
+	Path        string     `json:"path"`
 	Endpoints   []Endpoint `json:"end_points"`
 	Description string     `json:"description"`
 }
@@ -35,6 +37,10 @@ func (req *RegisterRequest) Validate() error {
 
 	if checkEmpty(req.Host) {
 		return errInvalidBaseURL
+	}
+
+	if checkEmpty(req.Path) {
+		return errInvalidPathIdentifier
 	}
 
 	if checkEmpty(req.Endpoints) {

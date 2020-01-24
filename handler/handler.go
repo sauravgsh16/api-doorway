@@ -15,22 +15,22 @@ var (
 	errNoRegisteredServices = errors.New("no registered services")
 )
 
-type GateWayHandler interface{}
-
-type gateway struct {
+type Gateway struct {
 	proxy  service.ProxyService
-	pm     map[string]http.HandlerFunc
+	Pm     map[string]http.HandlerFunc
 	notify <-chan *domain.MicroService
 	done   chan interface{}
 	mu     sync.Mutex
+	new    chan<- string
 }
 
 // New returns a new gateway handler for a given service
-func New(s service.ProxyService) (GateWayHandler, error) {
-	g := &gateway{
+func New(s service.ProxyService, new chan<- string) (*Gateway, error) {
+	g := &Gateway{
 		proxy: s,
-		pm:    make(map[string]http.HandlerFunc, 0),
+		Pm:    make(map[string]http.HandlerFunc, 0),
 		done:  make(chan interface{}),
+		new:   new,
 	}
 
 	var err error
@@ -44,7 +44,22 @@ func New(s service.ProxyService) (GateWayHandler, error) {
 	return g, nil
 }
 
-func (g *gateway) Register(w http.ResponseWriter, r *http.Request) {
+// GetHandlers to get all the registered handlers
+func (g *Gateway) loadAllProxies() error {
+	services := g.proxy.GetServices()
+	if len(services) == 0 {
+		return errNoRegisteredServices
+	}
+
+	return g.loadProxies(services)
+}
+
+func (g *Gateway) LoadProxies() error {
+	return g.loadAllProxies()
+}
+
+// Register handlerFunc to register a new service
+func (g *Gateway) Register(w http.ResponseWriter, r *http.Request) {
 	var req client.RegisterRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -66,7 +81,7 @@ func (g *gateway) Register(w http.ResponseWriter, r *http.Request) {
 	writeValidResponse(w, resp, http.StatusCreated)
 }
 
-func (g *gateway) addProxy(s *domain.MicroService) error {
+func (g *Gateway) addProxy(s *domain.MicroService) error {
 	p, err := newProxy(s)
 	if err != nil {
 		return err
@@ -75,16 +90,15 @@ func (g *gateway) addProxy(s *domain.MicroService) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	// TODO: Find proper Key for storing in map
-	if _, ok := g.pm[p.service.Host]; ok {
+	if _, ok := g.Pm[p.service.Path]; ok {
 		return nil
 	}
 
-	g.pm[p.service.Host] = p.HandlerFunc
+	g.Pm[p.service.Path] = p.HandlerFunc
 	return nil
 }
 
-func (g *gateway) loadProxies(srvs map[string]*domain.MicroService) error {
+func (g *Gateway) loadProxies(srvs map[string]*domain.MicroService) error {
 	for _, s := range srvs {
 		if err := g.addProxy(s); err != nil {
 			return err
@@ -93,30 +107,19 @@ func (g *gateway) loadProxies(srvs map[string]*domain.MicroService) error {
 	return nil
 }
 
-func (g *gateway) GetProxyHandlers() error {
-	services := g.proxy.GetServices()
-	if len(services) == 0 {
-		return errNoRegisteredServices
-	}
-
-	return g.loadProxies(services)
-}
-
-func (g *gateway) listenNewService() {
+func (g *Gateway) listenNewService() {
 	go func() {
 		for {
 			select {
 			case s := <-g.notify:
-				go g.addProxy(s)
+				g.addProxy(s)
+				// sends s.Path - service identifier
+				// so that router can use this info to register new router
+				g.new <- s.Path
+
 			case <-g.done:
 				break
 			}
 		}
 	}()
 }
-
-/*
-func getHandlers(srv *domain.MicroService) func(http.ResponseWriter, *http.Request) {
-
-}
-*/
