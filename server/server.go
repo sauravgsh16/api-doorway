@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -26,6 +27,8 @@ func Run() {
 		Addr:    config.Addr,
 		Handler: r.R,
 	}
+
+	fmt.Printf("Gateway server running on %s\n", config.Addr)
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf(err.Error())
