@@ -68,7 +68,7 @@ func (r *Router) addHandler(pathName string) {
 // Init router
 func (r *Router) Init() error {
 	// handle the register handler - for new service registration
-	r.R.HandleFunc("/register", r.g.Register)
+	r.R.HandleFunc("/register", r.g.Register).Methods("POST")
 
 	// load all proxies for services which are present in the db
 	if err := r.g.LoadProxies(); err != nil {

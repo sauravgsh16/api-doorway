@@ -1,0 +1,39 @@
+version: "3"
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: gateway
+        ports:
+            - "5000:5000"
+        networks:
+            - gateway-net
+        links:
+            - db:db
+        depends_on:
+            - db
+        environment:
+            DB_HOST: "db"
+            DB_PORT: "5432"
+            DB_USER: "postgres"
+            DB_PWD: "postgres"
+            DB_NAME: "gateway"
+            DB_TYPE: "postgres"
+
+    db:
+        build:
+            context: .
+            dockerfile: Dockerfile-db
+        image: postgres-gateway
+        ports:
+            - "5432:5432"
+        networks:
+            - gateway-net
+        environment:
+            POSTGRES_USER: "postgres"
+            DB_NAME: "gateway"
+
+networks:
+    gateway-net:
+        driver: bridge
