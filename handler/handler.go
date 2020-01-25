@@ -15,6 +15,7 @@ var (
 	errNoRegisteredServices = errors.New("no registered services")
 )
 
+// Gateway struct
 type Gateway struct {
 	proxy  service.ProxyService
 	Pm     map[string]http.HandlerFunc
@@ -54,6 +55,7 @@ func (g *Gateway) loadAllProxies() error {
 	return g.loadProxies(services)
 }
 
+// LoadProxies from th db
 func (g *Gateway) LoadProxies() error {
 	return g.loadAllProxies()
 }
