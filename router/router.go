@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -12,11 +13,11 @@ import (
 )
 
 type Router struct {
-	R   *mux.Router
-	g   *handler.Gateway
-	d   chan interface{}
-	new chan string
-	mux sync.Mutex
+	R    *mux.Router
+	g    *handler.Gateway
+	done chan interface{}
+	new  chan string
+	mux  sync.Mutex
 }
 
 // New returns a new router
@@ -24,9 +25,9 @@ func New(db *gorm.DB) (*Router, error) {
 	var err error
 
 	r := &Router{
-		R:   mux.NewRouter(),
-		d:   make(chan interface{}),
-		new: make(chan string),
+		R:    mux.NewRouter(),
+		done: make(chan interface{}),
+		new:  make(chan string),
 	}
 
 	s := store.NewMicroServiceStore(db)
@@ -43,26 +44,32 @@ func (r *Router) routeUpdater() {
 	go func() {
 		for {
 			select {
-			case <-r.d:
+			case <-r.done:
 				break
 			case n := <-r.new:
-				r.addHandler(n)
+				h := r.getHandler(n)
+				r.addHandler(n, h)
 			}
 		}
 	}()
 }
 
-func (r *Router) addHandler(pathName string) {
+func (r *Router) getHandler(path string) *handler.EndpointHandler {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
-	p, ok := r.g.Pm[pathName]
+	p, ok := r.g.ProxyMap[path]
 	if !ok {
-		// TODO: better way to check why handler func is not present.
-		return
+		return nil
 	}
-	path := "/" + pathName + "/*"
-	r.R.HandleFunc(path, p.ServeHTTP)
+	return p
+}
+
+func (r *Router) addHandler(path string, h *handler.EndpointHandler) {
+	for _, ep := range h.Eps {
+		path := "/" + path + fmt.Sprintf("/%s", ep.Path)
+		r.R.HandleFunc(path, h.Hf.ServeHTTP).Methods(ep.Method)
+	}
 }
 
 // Init router
@@ -76,8 +83,9 @@ func (r *Router) Init() error {
 	}
 
 	// load all handlers for the proxies
-	for p, h := range r.g.Pm {
-		r.R.HandleFunc("/"+p+"/*", h)
+	// TODO: check health of service before adding it to router
+	for p, h := range r.g.ProxyMap {
+		r.addHandler(p, h)
 	}
 	return nil
 }

@@ -17,21 +17,26 @@ var (
 
 // Gateway struct
 type Gateway struct {
-	proxy  service.ProxyService
-	Pm     map[string]http.HandlerFunc
-	notify <-chan *domain.MicroService
-	done   chan interface{}
-	mu     sync.Mutex
-	new    chan<- string
+	proxy    service.ProxyService
+	ProxyMap map[string]*EndpointHandler
+	notify   <-chan *domain.MicroService
+	done     chan interface{}
+	mu       sync.Mutex
+	new      chan<- string
+}
+
+type EndpointHandler struct {
+	Eps []*domain.Endpoint
+	Hf  http.HandlerFunc
 }
 
 // New returns a new gateway handler for a given service
 func New(s service.ProxyService, new chan<- string) (*Gateway, error) {
 	g := &Gateway{
-		proxy: s,
-		Pm:    make(map[string]http.HandlerFunc, 0),
-		done:  make(chan interface{}),
-		new:   new,
+		proxy:    s,
+		ProxyMap: make(map[string]*EndpointHandler, 0),
+		done:     make(chan interface{}),
+		new:      new,
 	}
 
 	var err error
@@ -92,11 +97,14 @@ func (g *Gateway) addProxy(s *domain.MicroService) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	if _, ok := g.Pm[p.service.Path]; ok {
+	if _, ok := g.ProxyMap[p.service.Path]; ok {
 		return nil
 	}
 
-	g.Pm[p.service.Path] = p.HandlerFunc
+	g.ProxyMap[p.service.Path] = &EndpointHandler{
+		Eps: []*domain.Endpoint(s.Endpoints),
+		Hf:  p.HandlerFunc,
+	}
 	return nil
 }
 

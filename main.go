@@ -70,7 +70,7 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	service, err := s.FindServiceByName("name")
+	service, err := s.GetServices()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

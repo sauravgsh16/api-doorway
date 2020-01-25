@@ -66,7 +66,7 @@ func (mss *microserviceStore) AddService(name, host, desc, path string, eps []*d
 func (mss *microserviceStore) GetServices() ([]domain.MicroService, error) {
 	var services []domain.MicroService
 
-	if err := mss.db.Find(&services).Error; err != nil {
+	if err := mss.db.Preload("Endpoints").Find(&services).Error; err != nil {
 		return nil, errFailedToGetServices
 	}
 	return services, nil
