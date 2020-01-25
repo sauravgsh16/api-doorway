@@ -60,9 +60,9 @@ func main() {
 	defer db.Close()
 
 	s := store.NewMicroServiceStore(db)
-	eps := []domain.Endpoint{
-		domain.Endpoint{Method: "get", Path: "/foo"},
-		domain.Endpoint{Method: "post", Path: "/bar"},
+	eps := []*domain.Endpoint{
+		&domain.Endpoint{Method: "get", Path: "/foo"},
+		&domain.Endpoint{Method: "post", Path: "/bar"},
 	}
 
 	_, err = s.AddService("name", "host", "desc", "path", eps)
@@ -74,6 +74,6 @@ func main() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	fmt.Printf("%v\n", service)
+	fmt.Printf("%+v\n", service)
 
 }

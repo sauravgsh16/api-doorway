@@ -41,9 +41,9 @@ func NewService(s store.MicroServiceStore) ProxyService {
 // AddService is called when a new service requests it to be added.
 // Along with the db, we also add the service to the in-memory storage
 func (s *service) AddService(req *client.RegisterRequest) (*client.RegisterResponse, error) {
-	var eps []domain.Endpoint
+	var eps []*domain.Endpoint
 	for _, ep := range req.Endpoints {
-		dEp := domain.Endpoint{
+		dEp := &domain.Endpoint{
 			Method: ep.Method,
 			Path:   ep.Path,
 		}
