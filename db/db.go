@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-
-	// prosgres driver
+	// postgres driver
 	_ "github.com/lib/pq"
+
+	"github.com/sauravgsh16/api-doorway/domain"
 )
 
 func init() {
@@ -38,6 +39,10 @@ func NewDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	db.DropTableIfExists(&domain.Endpoint{}, &domain.MicroService{})
+	db.AutoMigrate(&domain.Endpoint{}, &domain.MicroService{})
+	db.Model(&domain.Endpoint{}).AddForeignKey("service_id", "micro_services(id)", "CASCADE", "CASCADE")
 
 	// TODO: set max idle and open connections
 

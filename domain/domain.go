@@ -14,28 +14,30 @@ var (
 	errNoMatchBaseAndEndpoint = errors.New("no match - base URL and endpoint URL")
 )
 
-// EndPoint struct
-type EndPoint struct {
-	Method string `json:"method" sql:"type:varchar(6);not null"`
-	Path   string `json:"path" sql:"type:varchar(50)"`
+// Endpoint struct
+type Endpoint struct {
+	ID        int    `json:"id" gorm:"primary_key"`
+	Method    string `json:"method" gorm:"type:varchar(6);not null"`
+	Path      string `json:"path" gorm:"type:varchar(50)"`
+	ServiceID string `json:"service_id"`
 }
 
 // MicroService struct
 type MicroService struct {
-	ID          string      `json:"id" gorm:"primay_key"`
-	Name        string      `json:"name" sql:"varchar(50);index;unique;not null"`
-	Path        string      `json:"path" sql:"varchar(10);unique;no null"`
-	Endpoints   []*EndPoint `json:"end_points" sql:"varchar(250);not null" gorm:"foreignkey:Path"`
-	Host        string      `json:"host" sql:"type:varchar(250);unique;not null"`
-	Description string      `json:"description" sql:"type:varchar(250)"`
-	Running     bool        `json:"running" sql:"type:boolean"`
+	ID          string     `json:"id" gorm:"primay_key"`
+	Name        string     `json:"name" gorm:"varchar(50);index;unique;not null"`
+	Path        string     `json:"path" gorm:"varchar(10);unique;no null"`
+	Host        string     `json:"host" gorm:"type:varchar(250);unique;not null"`
+	Description string     `json:"description" gorm:"type:varchar(250)"`
+	Running     bool       `json:"running" gorm:"type:boolean"`
+	Endpoints   []Endpoint `json:"end_points" gorm:"ForeignKey:ServiceID"`
 
 	// TODO: Support for multiple instances running on different ports
 	// TODO: Add slice - containing list of running instances
 }
 
 // NewMicroService returns a pointer to a new microservice
-func NewMicroService(name, host, desc, path string, eps []*EndPoint) *MicroService {
+func NewMicroService(name, host, desc, path string, eps []Endpoint) *MicroService {
 	return &MicroService{
 		ID:          fmt.Sprintf("%s", uuid.Must(uuid.NewV4())),
 		Host:        host,
