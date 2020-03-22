@@ -1,0 +1,2 @@
+1) Add health check ping endpoint to service register request,
+   to check if service is actually running before registering it.

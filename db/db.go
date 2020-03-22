@@ -40,7 +40,7 @@ func NewDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.DropTableIfExists(&domain.Endpoint{}, &domain.MicroService{})
+	// db.DropTableIfExists(&domain.Endpoint{}, &domain.MicroService{})
 	db.AutoMigrate(&domain.Endpoint{}, &domain.MicroService{})
 	db.Model(&domain.Endpoint{}).AddForeignKey("service_id", "micro_services(id)", "CASCADE", "CASCADE")
 

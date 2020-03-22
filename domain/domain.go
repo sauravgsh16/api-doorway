@@ -24,13 +24,14 @@ type Endpoint struct {
 
 // MicroService struct
 type MicroService struct {
-	ID          string      `json:"id" gorm:"primay_key"`
-	Name        string      `json:"name" gorm:"varchar(50);index;unique;not null"`
-	Path        string      `json:"path" gorm:"varchar(10);unique;no null"`
-	Host        string      `json:"host" gorm:"type:varchar(250);unique;not null"`
-	Description string      `json:"description" gorm:"type:varchar(250)"`
-	Running     bool        `json:"running" gorm:"type:boolean"`
-	Endpoints   []*Endpoint `json:"end_points" gorm:"ForeignKey:ServiceID"`
+	ID          string `json:"id" gorm:"primay_key"`
+	Name        string `json:"name" gorm:"varchar(50);index;unique;not null"`
+	Path        string `json:"path" gorm:"varchar(10);unique;no null"`
+	Host        string `json:"host" gorm:"type:varchar(250);unique;not null"`
+	Description string `json:"description" gorm:"type:varchar(250)"`
+	// PingPath    string      `json:"ping_path" gorm:"varchar(10)"`
+	Endpoints []*Endpoint `json:"end_points" gorm:"ForeignKey:ServiceID"`
+	Running   bool        `json:"running" gorm:"type:boolean"`
 
 	// TODO: Support for multiple instances running on different ports
 	// TODO: Add slice - containing list of running instances

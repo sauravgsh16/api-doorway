@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -44,7 +45,8 @@ func singleHostReverseProxy(s *domain.MicroService) (*httputil.ReverseProxy, err
 		// http://ip:port/service_identifier/actual_path
 		// We need to remove the service_identifier and join the req.URL.Path
 		// with the actual_path requested.
-		req.URL.Path = strings.Join(strings.Split(req.URL.Path, "/")[2:], "/")
+		// TODO: Better way to accomplish this
+		req.URL.Path = fmt.Sprintf("/%s", strings.Join(strings.Split(req.URL.Path, "/")[2:], "/"))
 
 		if targetQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = targetQuery + req.URL.RawQuery

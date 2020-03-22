@@ -1,10 +1,9 @@
 package router
 
 import (
-	"fmt"
 	"sync"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi"
 	"github.com/jinzhu/gorm"
 
 	"github.com/sauravgsh16/api-doorway/handler"
@@ -13,7 +12,7 @@ import (
 )
 
 type Router struct {
-	R    *mux.Router
+	R    *chi.Mux
 	g    *handler.Gateway
 	done chan interface{}
 	new  chan string
@@ -25,7 +24,7 @@ func New(db *gorm.DB) (*Router, error) {
 	var err error
 
 	r := &Router{
-		R:    mux.NewRouter(),
+		R:    chi.NewRouter(),
 		done: make(chan interface{}),
 		new:  make(chan string),
 	}
@@ -36,6 +35,8 @@ func New(db *gorm.DB) (*Router, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	r.routeUpdater()
 
 	return r, nil
 }
@@ -66,16 +67,21 @@ func (r *Router) getHandler(path string) *handler.EndpointHandler {
 }
 
 func (r *Router) addHandler(path string, h *handler.EndpointHandler) {
-	for _, ep := range h.Eps {
-		path := "/" + path + fmt.Sprintf("/%s", ep.Path)
-		r.R.HandleFunc(path, h.Hf.ServeHTTP).Methods(ep.Method)
-	}
+	path = "/" + path + "/*"
+	r.R.HandleFunc(path, h.Hf.ServeHTTP)
+
+	/*
+		for _, ep := range h.Eps {
+			path := "/" + path + fmt.Sprintf("/%s", ep.Path)
+			r.R.HandleFunc(path, h.Hf.ServeHTTP).Methods(ep.Method)
+		}
+	*/
 }
 
 // Init router
 func (r *Router) Init() error {
 	// handle the register handler - for new service registration
-	r.R.HandleFunc("/register", r.g.Register).Methods("POST")
+	r.R.Post("/register", r.g.Register)
 
 	// load all proxies for services which are present in the db
 	if err := r.g.LoadProxies(); err != nil {
